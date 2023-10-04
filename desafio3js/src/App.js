@@ -12,11 +12,6 @@ function App() {
         </nabvar>
         <Formulario />
         <Vista />
-        <footer className="footer">
-          <div>
-        <p>Pagina creada por Joaquin Suarez y mi gran amigo el chat jeep pee tee</p>
-          </div>
-        </footer>
       </div>
     );
   }

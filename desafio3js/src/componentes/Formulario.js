@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import './Formulario.css'; 
 
-function Form() {
+function Form({ onSubmitForm }) {
   const [desc, setDesc] = useState('');
   const [cantidad, setCantidad] = useState('');
-  const [pildoras, setPildoras] = useState([]);
 
   const handleCantidadChange = (e) => {
     setCantidad(e.target.value);
@@ -13,19 +12,11 @@ function Form() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (cantidad && desc) {
-      // Crear una nueva píldora con Bootstrap y agregarla al estado de píldoras
-      const nuevaPildora = (
-        <div key={pildoras.length} className="pildora">
-          {cantidad} - {desc}
-          <button
-            className="btn"
-            onClick={() => handlePildoraEliminar(pildoras.length)}
-          >
-            x
-          </button>
-        </div>
-      );
-      setPildoras([...pildoras, nuevaPildora]);
+      const nuevaPildora = {
+        cantidad,
+        desc,
+      };
+      onSubmitForm(nuevaPildora);
 
       // Limpiar los campos de descripción y cantidad
       setDesc('');
@@ -33,16 +24,10 @@ function Form() {
     }
   };
 
-  const handlePildoraEliminar = (index) => {
-    const pildorasCopia = [...pildoras];
-    pildorasCopia.splice(index, 1);
-    setPildoras(pildorasCopia);
-  };
-
   return (
     <div>
       <br />
-      <form className='conteiner' onSubmit={handleSubmit}>
+      <form className='container' onSubmit={handleSubmit}>
         <div className="mb-3">
           <label htmlFor="descripcion" className="form-label">Descripción</label>
           <input
@@ -69,11 +54,6 @@ function Form() {
         </div>
         <button type="submit" className="btn btn-primary">Obtener</button>
       </form>
-      <div className="mt-3">
-        {pildoras.map((pildora, index) => (
-          <React.Fragment key={index}>{pildora}</React.Fragment>
-        ))}
-      </div>
     </div>
   );
 }

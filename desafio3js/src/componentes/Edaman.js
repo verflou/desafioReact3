@@ -1,87 +1,112 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Formulario.css';
-
-function createCORSRequest(method, url) {
-  var xhr = new XMLHttpRequest();
-  if ("withCredentials" in xhr) {
-    // XHR for Chrome/Firefox/Opera/Safari.
-    xhr.open(method, url, true);
-  } else if (typeof XDomainRequest !== "undefined") {
-    xhr.open(method, url);
-  } else {
-    // CORS not supported.
-    xhr = null;
-  }
-  return xhr;
-}
+import Form from './Formulario';
 
 function Edamam() {
-  const [app_id, setAppId] = useState('');
-  const [app_key, setAppKey] = useState('');
-  const [recipe, setRecipe] = useState('');
-  const [response, setResponse] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [selectRegion, setSelectRegion] = useState('');
+  const [selectComida, setSelectComida] = useState('');
+  const [recipes, setRecipes] = useState([]);
+  const [pildoras, setPildoras] = useState([]); 
+  const [searchQuery, setSearchQuery] = useState('');
+  const appId = 'a9eb7400';
+  const appKey = '51aae2dbbacf7399f6d00197db49171a';
 
-  const handleAppIdChange = (event) => {
-    setAppId(event.target.value);
-  };
+  useEffect(() => {
+    const apiUrl = `https://api.edamam.com/search?q=${searchQuery}&dishType=${selectComida}&cuisineType=${selectRegion}&app_id=${appId}&app_key=${appKey}`;
 
-  const handleAppKeyChange = (event) => {
-    setAppKey(event.target.value);
-  };
-
-  const handleRecipeChange = (event) => {
-    setRecipe(event.target.value);
-  };
-
-  const makeCorsRequest = () => {
-    setLoading(true);
-
-    var url = `https://api.edamam.com/api/nutrition-details?app_id=${app_id}&app_key=${app_key}`;
-
-    var xhr = createCORSRequest('POST', url);
-    if (!xhr) {
-      alert('CORS not supported');
-      setLoading(false);
-      return;
+    if (searchQuery !== '' && selectComida !== '' && selectRegion !== '') {
+      fetch(apiUrl)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`La solicitud falló con estado: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then((responseData) => {
+          const limitedRecipes = responseData.hits.slice(0, 2);
+          setRecipes(limitedRecipes);
+        })
+        .catch((error) => {
+          console.error('Hubo un error al hacer la solicitud:', error);
+        });
     }
+  }, [searchQuery, selectComida, selectRegion]);
 
-    // Response handlers.
-    xhr.onload = function() {
-      var text = xhr.responseText;
-      setResponse(text);
-      setLoading(false);
-    };
+  const handleFormSubmit = (newPill) => {
+    setPildoras([...pildoras, newPill]);
+  };
 
-    xhr.onerror = function() {
-      alert('Woops, there was an error making the request.');
-      setLoading(false);
-    };
+  const handleRegionChange = (event) => {
+    setSelectRegion(event.target.value);
+  };
 
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.send(recipe);
+  const handleDishTypeChange = (event) => {
+    setSelectComida(event.target.value);
+  };
+
+  const handleGenerateRecipe = () => {
+    const keywords = pildoras.map((pildora) => pildora.desc).join(' ');
+    // Construir la URL de la API
+    const apiUrl = `https://api.edamam.com/search?q=${keywords}&dishType=${selectComida}&cuisineType=${selectRegion}&app_id=${appId}&app_key=${appKey}`;
+
+    // Realizar la solicitud a la API
+    fetch(apiUrl)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`La solicitud falló con estado: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((responseData) => {
+        const limitedRecipes = responseData.hits.slice(0, 2);
+        setRecipes(limitedRecipes);
+      })
+      .catch((error) => {
+        console.error('Hubo un error al hacer la solicitud:', error);
+      });
   };
 
   return (
-    <div>
-      <h1>Nutrition Analysis API</h1>
-      <label htmlFor="app_id">app_id:</label>
-      <input type="text" name="app_id" id="app_id" value={app_id} onChange={handleAppIdChange} />
-      <br />
-      <label htmlFor="app_key">app_key:</label>
-      <input type="text" name="app_key" id="app_key" value={app_key} onChange={handleAppKeyChange} />
-      <br />
-      <textarea id="recipe" rows="20" cols="80" value={recipe} onChange={handleRecipeChange}>
-      </textarea>
-      <br />
-      <button type="button" onClick={makeCorsRequest}>Submit</button>
-      <hr /> Response:
-      <br />
-      {loading ? (
-        <p>Loading...</p>
-      ) : (
-        <pre id="response">{response}</pre>
-      )}
+    <div className="container">
+      <h1>Busca una receta según tus gustos</h1>
+      <div className="search-container">
+        <input
+          type="text"
+          placeholder="Ingrese palabras clave"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        <button onClick={handleGenerateRecipe}>Generar Receta</button>
+      </div>
+      <div className="pills-container">
+        {pildoras.map((pildora, index) => (
+          <div key={index} className="pildora">
+            {pildora.cantidad} - {pildora.desc}
+          </div>
+        ))}
+      </div>
+      <select value={selectRegion} onChange={handleRegionChange}>
+        <option value="">Selecciona una región</option>
+        <option value="Italian">Italiana</option>
+        <option value="Mexican">Mexicana</option>
+        <option value="Indian">India</option>
+        <option value="Asian">Asian</option>
+        <option value="mundo">Mundo</option>
+      </select>
+      <select value={selectComida} onChange={handleDishTypeChange}>
+        <option value="">Selecciona un tipo de alimento</option>
+        <option value="Pizza">Pizza</option>
+        <option value="Pasta">Pasta</option>
+        <option value="Salad">Ensalada</option>
+      </select>
+      <div id="response">
+        {recipes.map((recipe, index) => (
+          <div key={index}>
+            <h2>{recipe.recipe.label}</h2>
+            <p>Instrucciones: {recipe.recipe.instructions}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
